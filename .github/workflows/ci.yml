@@ -18,9 +18,11 @@ jobs:
     - name: install mamba
       uses: mamba-org/provision-with-micromamba@main
       with:
-        environment-file: environment.yml
-        environment-name: geomaml
+        environment-file: crop_classification/environment.yml
+        environment-name: timl-classification
     - name: Run tests
       run: |
+        cd crop_classification
         python -m black --check --diff .
-        python -m mypy cropharvest_taml
+        python -m mypy .
+        cd ..
