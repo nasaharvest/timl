@@ -67,13 +67,6 @@ class Classifier(nn.Module):
         )
         self.embeddings = embeddings
 
-    @property
-    def b(self) -> np.ndarray:
-        # for the GP: "We choose b as the weight vector of the last layer of our deep models"
-        final_weight = self.global_classifier[-1][0].weight.detach().cpu().numpy()
-        final_bias = self.global_classifier[-1][0].bias.detach().cpu().numpy()
-        return np.concatenate((final_weight.transpose(1, 0), np.expand_dims(final_bias, 1)))
-
     def forward(self, x: torch.Tensor, return_last_dense: bool = False) -> torch.Tensor:
 
         if self.embeddings is not None:

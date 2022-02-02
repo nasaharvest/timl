@@ -92,13 +92,6 @@ class ConvNet(nn.Module):
     def update_embeddings(self, embeddings: Tuple[List[torch.Tensor], List[torch.Tensor]]) -> None:
         self.embeddings = embeddings
 
-    @property
-    def b(self) -> np.ndarray:
-        # for the GP: "We choose b as the weight vector of the last layer of our deep models"
-        final_weight = self.dense_layers[-1].weight.detach().cpu().numpy()
-        final_bias = self.dense_layers[-1].bias.detach().cpu().numpy()
-        return np.concatenate((final_weight.transpose(1, 0), np.expand_dims(final_bias, 1)))
-
     def initialize_weights(self):
         for convblock in self.convblocks:
             nn.init.kaiming_uniform_(convblock.conv.weight.data)

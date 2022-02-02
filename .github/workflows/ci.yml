@@ -23,7 +23,7 @@ jobs:
     - name: Run tests
       run: |
         cd crop_classification
-        python -m black --check --diff ..
+        python -m black --check --diff .
         cd ..
   test-yield:
     runs-on: ubuntu-latest
@@ -40,6 +40,6 @@ jobs:
     - name: Run tests
       run: |
         cd yield
-        python -m black --check --diff ..
+        python -m black --check --diff .
         python -m pytest
         cd ..
