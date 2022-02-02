@@ -2,8 +2,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-import numpy as np
-
 from typing import Optional, Tuple, List
 
 
@@ -20,11 +18,12 @@ class ConvNet(nn.Module):
     dropout: float, default=0.5
         Default taken from the original paper
     dense_features: list, or None, default=None.
-        output feature size of the Linear layers. If None, default values will be taken from the paper.
-        The length of the list defines how many linear layers are used.
+        output feature size of the Linear layers. If None, default values will be taken
+        from the paper. The length of the list defines how many linear layers are used.
     time: int, default=32
-        The number of timesteps being used. This is necessary to pass in the initializer since it will
-        affect the size of the first dense layer, which is the flattened output of the conv layers
+        The number of timesteps being used. This is necessary to pass in the initializer
+        since it will affect the size of the first dense layer, which is the flattened
+        output of the conv layers
     savedir: pathlib Path, default=Path('data/models')
         The directory into which the models should be saved.
     device: torch.device

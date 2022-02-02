@@ -1,6 +1,9 @@
-from src.data.yield_data import CropYieldDataset
+from src.data import CropYieldDataset
+
+import pytest
 
 
+@pytest.mark.skip(reason="Histograms may not be downloaded")
 def test_latlons():
     ds = CropYieldDataset()
 

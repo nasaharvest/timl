@@ -149,7 +149,8 @@ class CropYieldDataset:
             std = np.std(hist_reshaped, axis=(0, 1))
             std[std == 0] = 1
             if self.include_year:
-                # we append the year normalizing info to the hist, since they will be normalized together
+                # we append the year normalizing info to the hist, since they
+                # will be normalized together
                 mean = np.append(mean, self.metadata["year"].mean())
                 std = np.append(std, self.metadata["year"].std())
             hist_normalizing_dict = {"mean": mean, "std": std}

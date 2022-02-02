@@ -401,7 +401,8 @@ class Learner:
                     )
                     if mean_mse <= task_removal_threshold:
                         print(
-                            f"Removing {label} - average MSE over the last {task_removal_lookback}: {mean_mse}"
+                            f"Removing {label} - average MSE over the last "
+                            f"{task_removal_lookback}: {mean_mse}"
                         )
                         self.train_cache["removed_labels"].append(label)
 

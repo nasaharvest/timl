@@ -1,6 +1,3 @@
-from typing import Dict, List
-
-
 SHUFFLE_SEEDS = list(range(10))
 
 # Model names
