@@ -23,6 +23,5 @@ jobs:
     - name: Run tests
       run: |
         cd crop_classification
-        python -m black --check --diff .
-        python -m mypy .
+        python -m black --check --diff ..
         cd ..
