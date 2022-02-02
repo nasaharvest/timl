@@ -1,0 +1,26 @@
+name: Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+    - uses: actions/checkout@v2
+    - name: install mamba
+      uses: mamba-org/provision-with-micromamba@main
+      with:
+        environment-file: environment.yml
+        environment-name: geomaml
+    - name: Run tests
+      run: |
+        python -m black --check --diff .
+        python -m mypy cropharvest_taml

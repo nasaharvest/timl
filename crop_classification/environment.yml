@@ -1,0 +1,28 @@
+name: timl-classification
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.6  # earthengine doesn't play with python 3.7
+  - dataclasses  # only introduced in python 3.7
+  - black
+  - mypy=0.812  # so that stubs are bundled in with mypy
+  - pytest
+  - pytest-flake8
+  - pandas
+  - xarray
+  - netcdf4
+  - rasterio
+  - matplotlib
+  - pip
+  - pytorch=1.6.0
+  - pyproj
+  - tqdm
+  - geopandas
+  - cartopy
+  - scikit-learn
+  - pip:
+      - learn2learn==0.1.3
+      - dill
+      - openpyxl
+      - cropharvest==0.2.0
