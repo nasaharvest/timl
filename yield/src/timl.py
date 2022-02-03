@@ -688,7 +688,7 @@ class Learner:
             min_test_year=min_test_year,
             num_encoder_channels_per_group=model_info["num_encoder_channels_per_group"],
             max_val_tasks=model_info["max_val_tasks"],
-            device=device
+            device=device,
         )
 
         classifier_sd = torch.load(folder / "state_dict.pth", map_location=device)
