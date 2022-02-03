@@ -36,7 +36,6 @@ class Learner:
         val_size: float = 0.1,
         encoder_vector_sizes: Union[List[int], int] = 128,
         encoder_dropout: float = 0.2,
-        concatenate_task_info: bool = False,
         min_test_year: int = 2011,
         sampling_buffer: Optional[float] = 0.1,
         num_encoder_channels_per_group: Union[int, List[int]] = 16,
@@ -52,7 +51,6 @@ class Learner:
             include_year = True
 
         self.min_total_k = k + update_val_size
-        self.concatenate_task_info = concatenate_task_info
         self.device = device
 
         self.model_info: Dict = {
@@ -64,7 +62,6 @@ class Learner:
             "max_val_tasks": max_val_tasks,
             "encoder_dropout": encoder_dropout,
             "encoder_vector_sizes": encoder_vector_sizes,
-            "concatenate_task_info": concatenate_task_info,
             "include_year": include_year,
             "num_encoder_channels_per_group": num_encoder_channels_per_group,
             "add_awareness": add_awareness,
@@ -78,7 +75,6 @@ class Learner:
         self.train_dl = CropYieldDataset(
             root_dir=str(self.root),
             is_test=False,
-            concatenate_task_info=self.concatenate_task_info,
             min_test_year=min_test_year,
             sampling_buffer=sampling_buffer,
             model_type=model_type,
@@ -88,7 +84,6 @@ class Learner:
         self.test_dl = CropYieldDataset(
             root_dir=str(self.root),
             is_test=True,
-            concatenate_task_info=self.concatenate_task_info,
             min_test_year=min_test_year,
             sampling_buffer=False,
             model_type=model_type,
@@ -103,11 +98,7 @@ class Learner:
         self.model_info["input_shape"] = self.train_dl.input_shape
         self.model_info["input_task_info_size"] = self.train_dl.task_info_size
 
-        if concatenate_task_info:
-            assert model_type == "lstm"
-            input_size = self.train_dl.num_bands + self.train_dl.task_info_size
-        else:
-            input_size = self.train_dl.num_bands
+        input_size = self.train_dl.num_bands
         self.model_info["input_size"] = input_size
 
         if model_type == "lstm":
@@ -116,7 +107,6 @@ class Learner:
             self.model = ConvNet(in_channels=input_size, **model_kwargs).to(device)
 
         self.encoder: Optional[nn.Module] = None
-        self.concatenate_task_info = concatenate_task_info
         self.add_awareness = add_awareness
         if isinstance(encoder_vector_sizes, int):
             encoder_vector_sizes = [encoder_vector_sizes]
@@ -654,6 +644,63 @@ class Learner:
             np.save(self.version_folder / f"test_years{suffix}.npy", test_years_np)
             np.save(self.version_folder / f"test_loc{suffix}.npy", test_loc_np)
 
+    def load_state_dicts(self, classifier: Dict, encoder: Optional[Dict]) -> None:
+        self.model.load_state_dict(classifier)
+
+        if self.encoder is not None:
+            assert encoder is not None
+            self.encoder.load_state_dict(encoder)
+
+    @classmethod
+    def load_from_folder(
+        cls,
+        root: Path,
+        model_name: str,
+        device: torch.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+    ):
+        folder = root / model_name
+        model_info_path = folder / "model_info.json"
+        if not model_info_path.exists():
+            model_increment = 0
+            while (folder / f"version_{model_increment + 1}").exists():
+                model_increment += 1
+            model_info_path = folder / f"version_{model_increment}/model_info.json"
+        if not model_info_path.exists():
+            raise RuntimeError("Missing model info")
+
+        assert (folder / "state_dict.pth").exists()
+
+        with model_info_path.open("r") as f:
+            model_info = json.load(f)
+
+        min_test_year = int(model_name[-4:])
+
+        learner = cls(
+            root=root,
+            model_name=model_name,
+            model_kwargs=model_info["model_kwargs"],
+            model_type=model_info["model_type"],
+            k=model_info["k"],
+            update_val_size=model_info["update_val_size"],
+            val_size=model_info["val_size"],
+            encoder_vector_sizes=model_info["encoder_vector_sizes"],
+            encoder_dropout=model_info["encoder_dropout"],
+            min_test_year=min_test_year,
+            num_encoder_channels_per_group=model_info["num_encoder_channels_per_group"],
+            max_val_tasks=model_info["max_val_tasks"],
+            device=device
+        )
+
+        classifier_sd = torch.load(folder / "state_dict.pth", map_location=device)
+        encoder_sd = (
+            torch.load(folder / "encoder_state_dict.pth", map_location=device)
+            if (folder / "encoder_state_dict.pth").exists()
+            else None
+        )
+        learner.load_state_dicts(classifier_sd, encoder_sd)
+
+        return learner
+
     def to(self, device: torch.device) -> None:
         self.model.to(device)
         if self.encoder is not None:
@@ -678,7 +725,6 @@ def train_timl_model(
     max_adaptation_steps: int = 1,
     task_batch_size: int = 32,
     num_iterations: int = 1000,
-    concatenate_task_info: bool = False,
     save_best_val: bool = True,
     checkpoint_every: int = 20,
     schedule: bool = True,
@@ -713,8 +759,6 @@ def train_timl_model(
     :param encoder_vector_sizes: The size of the encoder's hidden layers (the default
         argument is a list, but this function should only get called once)
     :param encoder_dropout: The dropout to use between encoder layers
-    :param concatenate_task_info: Whether to concatenate task info to the raw input. If
-        True, no encoder is used
     :param save_best_val: Whether to save the model with the best validation score,
         as well as the final model
     :param checkpoint_every: The model prints out training statistics every
@@ -736,7 +780,6 @@ def train_timl_model(
         val_size,
         encoder_vector_sizes,
         encoder_dropout,
-        concatenate_task_info,
         min_test_year,
     )
 
