@@ -1,6 +1,6 @@
 # Task-Informed Meta-Learning
 
-This repository contains examples of Task-Informed Meta-Learning.
+This repository contains examples of Task-Informed Meta-Learning ([paper](https://arxiv.org/abs/2202.02124)).
 
 We consider two tasks:
 
