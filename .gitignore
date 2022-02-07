@@ -184,3 +184,6 @@ files
 .pytest_cache/
 # mypy
 .mypy_cache/
+
+# data
+yield/data/

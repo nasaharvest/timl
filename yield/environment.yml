@@ -4,7 +4,6 @@ channels:
   - pytorch
 dependencies:
   - python=3.6  # earthengine doesn't play with python 3.7
-  - dataclasses  # only introduced in python 3.7
   - black
   - pytest
   - pytest-flake8

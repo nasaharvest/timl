@@ -5,7 +5,7 @@ import numpy as np
 import random
 from sklearn.metrics import r2_score
 
-from .utils import concatenate_task_info, HISTOGRAM_NAME
+from .utils import HISTOGRAM_NAME
 
 from typing import Dict, List, Tuple, Optional
 
@@ -15,7 +15,6 @@ class CropYieldDataset:
         self,
         root_dir="data",
         is_test: bool = False,
-        concatenate_task_info: bool = False,
         min_test_year: int = 2011,
         sampling_buffer: Optional[float] = 0.1,
         model_type: str = "lstm",
@@ -28,7 +27,6 @@ class CropYieldDataset:
         self.model_type = model_type
         self.include_year = include_year
         self._data_dir = root_dir
-        self.concatenate_task_info = concatenate_task_info
         self.device = device
 
         with np.load(Path(root_dir) / HISTOGRAM_NAME) as hist:
@@ -346,8 +344,6 @@ class CropYieldDataset:
             torch.as_tensor(task_info, dtype=torch.float32, device=self.device),
         )
         assert len(t_t) == self.task_info_size
-        if self.concatenate_task_info:
-            x_t = concatenate_task_info(x_t, t_t)
         return t_t, years, (x_t, y_t)
 
     def metadata_to_task_info(self, metadata: pd.Series, normalize: bool = False) -> List[float]:
