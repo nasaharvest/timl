@@ -42,6 +42,7 @@ class Learner:
         device: torch.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
         max_val_tasks: int = 50,
         add_awareness: bool = True,
+        model_folder: Optional[Path] = None,
     ) -> None:
 
         assert model_name.endswith(str(min_test_year))
@@ -154,7 +155,9 @@ class Learner:
         self.train_info: Dict = {}
         self.maml: Optional[l2l.algorithms.MAML] = None
 
-        self.model_folder = self.root / model_name
+        if model_folder is None:
+            model_folder = self.root / model_name
+        self.model_folder = model_folder
         self.model_folder.mkdir(exist_ok=True)
 
         model_increment = 0
@@ -657,18 +660,20 @@ class Learner:
         root: Path,
         model_name: str,
         device: torch.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+        model_folder: Optional[Path] = None,
     ):
-        folder = root / model_name
-        model_info_path = folder / "model_info.json"
+        if model_folder is None:
+            model_folder = root / model_name
+        model_info_path = model_folder / "model_info.json"
         if not model_info_path.exists():
             model_increment = 0
-            while (folder / f"version_{model_increment + 1}").exists():
+            while (model_folder / f"version_{model_increment + 1}").exists():
                 model_increment += 1
-            model_info_path = folder / f"version_{model_increment}/model_info.json"
+            model_info_path = model_folder / f"version_{model_increment}/model_info.json"
         if not model_info_path.exists():
             raise RuntimeError("Missing model info")
 
-        assert (folder / "state_dict.pth").exists()
+        assert (model_folder / "state_dict.pth").exists()
 
         with model_info_path.open("r") as f:
             model_info = json.load(f)
@@ -689,12 +694,13 @@ class Learner:
             num_encoder_channels_per_group=model_info["num_encoder_channels_per_group"],
             max_val_tasks=model_info["max_val_tasks"],
             device=device,
+            model_folder=model_folder,
         )
 
-        classifier_sd = torch.load(folder / "state_dict.pth", map_location=device)
+        classifier_sd = torch.load(model_folder / "state_dict.pth", map_location=device)
         encoder_sd = (
-            torch.load(folder / "encoder_state_dict.pth", map_location=device)
-            if (folder / "encoder_state_dict.pth").exists()
+            torch.load(model_folder / "encoder_state_dict.pth", map_location=device)
+            if (model_folder / "encoder_state_dict.pth").exists()
             else None
         )
         learner.load_state_dicts(classifier_sd, encoder_sd)
