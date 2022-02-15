@@ -45,13 +45,13 @@ def test_jit(tmp_path):
 
     model.save("timl", tmp_path)
 
-    loaded_model = torch.jit.load(tmp_path / f"timl.pt")
-    loaded_model.eval()
+    jit_model = torch.jit.load(tmp_path / f"timl.pt")
+    jit_model.eval()
 
     x = torch.rand(5, num_timesteps, input_size)
 
     with torch.no_grad():
-        loaded_y = loaded_model(x).numpy()
-        org_y = model(x).numpy()
+        y_from_jit_model = jit_model(x).numpy()
+        y_from_state_dict_model = model(x).numpy()
 
-    assert np.allclose(loaded_y, org_y)
+    assert np.allclose(y_from_jit_model, y_from_state_dict_model)
