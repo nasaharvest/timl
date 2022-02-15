@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 
 import torch
 from torch import nn
@@ -97,6 +98,13 @@ class Classifier(nn.Module):
                 x = (x * gamma) + beta
             x = layer(x)
         return torch.sigmoid(x)
+
+    def save(self, model_name: str, savepath: Path):
+        sm = torch.jit.script(self)
+        model_path = savepath / f"{model_name}.pt"
+        if model_path.exists():
+            model_path.unlink()
+        sm.save(model_path)
 
 
 class UnrolledLSTM(nn.Module):
@@ -243,13 +251,17 @@ class VariationalDropout(nn.Module):
     as described in https://arxiv.org/pdf/1512.05287.pdf
     """
 
-    def __init__(self, p):
+    def __init__(self, p: float):
         super().__init__()
 
         self.p = p
-        self.mask = None
 
-    def update_mask(self, x_shape: Tuple, is_cuda: bool) -> None:
+        # we will immediately overwrite this in update_mask,
+        # but torch.jit doesn't like optional types (since
+        # we return it in the forward method)
+        self.mask: torch.Tensor = torch.ones(1)
+
+    def update_mask(self, x_shape: List[int], is_cuda: bool) -> None:
         mask = torch.bernoulli(torch.ones(x_shape) * (1 - self.p)) / (1 - self.p)
         if is_cuda:
             mask = mask.cuda()
@@ -259,4 +271,5 @@ class VariationalDropout(nn.Module):
         if not self.training:
             return x
 
+        assert self.mask is not None
         return self.mask * x
