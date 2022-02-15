@@ -1,13 +1,13 @@
 # Task-Informed Meta-Learning
 
-This repository contains examples of Task-Informed Meta-Learning.
+This repository contains examples of Task-Informed Meta-Learning ([paper](https://arxiv.org/abs/2202.02124)).
 
 We consider two tasks:
 
 - [Crop Type Classification](crop_classification)
 - [Yield Estimation](yield)
 
-Each task acts as its own self-contained codebase - for more details on getting started, please check their respective READMEs.
+Each task acts as its own self-contained codebase - for more details on running the experiments, please check their respective READMEs.
 
 ### Getting started
 
