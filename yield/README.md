@@ -18,3 +18,17 @@ conda activate timl-yield
 ```
 
 The main script to train the models is then [`deep_learning.py`](deep_learning.py), with the model configurations controlled by the [`config`](config.py). Running this script will automatically download the data into the [data folder](data) from [Zenodo](https://zenodo.org/record/5948877).
+
+To use the trained models from [Zenodo](https://zenodo.org/record/5948877), download them to the [data folder](data) and untar them. The following code loads a learner from the state dictionaries:
+
+```python
+from src.timl import Learner
+
+
+learner = Learner.load_from_folder(
+    "data",
+    model_name="yield_cnn_timl",
+    model_folder="data/yield_cnn_timl/TIML_cnn_2011",
+)
+```
+Specifically, this returns the TIML-CNN learner trained on data up to 2011.

@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 
 
 HISTOGRAM_NAME = "histogram_all_full.npz"
-DATASET_VERSION_ID = 5948877
+DATASET_VERSION_ID = 6089828
 DATASET_URL = f"https://zenodo.org/record/{DATASET_VERSION_ID}"
 
 
