@@ -1,4 +1,3 @@
-import torch
 import random
 from pathlib import Path
 from tqdm import tqdm
@@ -9,7 +8,7 @@ from typing import List, Optional, Tuple
 
 
 HISTOGRAM_NAME = "histogram_all_full.npz"
-DATASET_VERSION_ID = 5948877
+DATASET_VERSION_ID = 6089828
 DATASET_URL = f"https://zenodo.org/record/{DATASET_VERSION_ID}"
 
 
@@ -47,17 +46,6 @@ def download_and_extract_archive(root: str, filename: str, targz: bool = True) -
     else:
         url = f"{DATASET_URL}/files/{file_path.name}?download=1"
         download_from_url(url, file_path_str)
-
-
-def concatenate_task_info(x: torch.Tensor, task_info: torch.Tensor) -> torch.Tensor:
-    r"""
-    x should be of shape [n_batches, time, channels]
-
-    task info will be stacked and appended to x so that the returned array
-    has shape [n_batches, time, channels + task_info_dims]
-    """
-    task_info_batches_time = torch.stack([torch.stack([task_info] * x.shape[1])] * x.shape[0])
-    return torch.cat([x, task_info_batches_time], dim=-1)
 
 
 def sample_with_memory(

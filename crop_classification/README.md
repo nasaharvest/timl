@@ -20,3 +20,5 @@ conda activate timl-classification
 ```
 
 The main script to train the models is then [`deep_learning.py`](deep_learning.py), with the model configurations controlled by the [`config`](config.py)
+
+The trained TIML model is available on [Zenodo](https://zenodo.org/record/6089828).

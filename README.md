@@ -17,3 +17,5 @@ For both tasks, [anaconda](https://www.anaconda.com/download/#macos) running pyt
 conda env create -f environment.yml
 ```
 Once the environment is activated, the main script to train the models is then `deep_learning.py`, with the model configurations controlled by the `config.py` file.
+
+The trained TIML models are available on [Zenodo](https://zenodo.org/record/6089828).

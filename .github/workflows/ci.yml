@@ -41,5 +41,5 @@ jobs:
       run: |
         cd yield
         python -m black --check --diff .
-        python -m pytest
+        python -m pytest -m "not integration"
         cd ..
