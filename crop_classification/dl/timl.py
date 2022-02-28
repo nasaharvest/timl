@@ -13,8 +13,15 @@ import learn2learn as l2l
 from tqdm import tqdm
 from sklearn.metrics import roc_auc_score
 import numpy as np
-import subprocess
 
+from .config import (
+    CLASSIFIER_DROPOUT,
+    NUM_CLASSIFICATION_LAYERS,
+    HIDDEN_VECTOR_SIZE,
+    CLASSIFIER_BASE_LAYERS,
+    ENCODER_VECTOR_SIZES,
+    ENCODER_DROPOUT,
+)
 from .lstm import Classifier
 from .encoder import TaskEncoder
 from .datasets import TIMLCropHarvestLabels, TIMLCropHarvest, TIMLTask
@@ -625,13 +632,13 @@ class Learner:
 
 def train_timl_model(
     root,
-    classifier_vector_size: int,
-    classifier_dropout: float,
-    classifier_base_layers: int,
-    num_classification_layers: int,
     model_name: str,
     encoder_vector_sizes: Union[List[int], int],
-    encoder_dropout: float,
+    classifier_vector_size: int = HIDDEN_VECTOR_SIZE,
+    classifier_dropout: float = CLASSIFIER_DROPOUT,
+    classifier_base_layers: int = CLASSIFIER_BASE_LAYERS,
+    num_classification_layers: int = NUM_CLASSIFICATION_LAYERS,
+    encoder_dropout: float = ENCODER_DROPOUT,
     k: int = 10,
     update_val_size: int = 8,
     val_size: float = 0.1,
@@ -717,3 +724,42 @@ def train_timl_model(
     )
 
     return model.model
+
+
+def load_timl_model(
+    task_info: np.ndarray,
+    input_size: int,
+    num_timesteps: int,
+    model_state_dict_path: Path,
+    encoder_state_dict_path: Optional[Path],
+):
+    """
+    Load a trained TIML model
+    """
+    model = Classifier(
+        input_size=input_size,
+        classifier_base_layers=CLASSIFIER_BASE_LAYERS,
+        num_classification_layers=NUM_CLASSIFICATION_LAYERS,
+        classifier_dropout=CLASSIFIER_DROPOUT,
+        classifier_vector_size=HIDDEN_VECTOR_SIZE,
+    )
+    model.load_state_dict(torch.load(model_state_dict_path))
+
+    if encoder_state_dict_path.exists():
+        encoder = TaskEncoder(
+            input_size=task_info.shape[0],
+            encoder_vector_sizes=ENCODER_VECTOR_SIZES,
+            encoder_dropout=ENCODER_DROPOUT,
+            num_bands=input_size,  # TODO is this right?
+            num_hidden_layers=NUM_CLASSIFICATION_LAYERS,
+            hidden_vector_size=HIDDEN_VECTOR_SIZE,
+            num_timesteps=num_timesteps,
+        )
+        encoder.load_state_dict(torch.load(encoder_state_dict_path))
+        encoder.eval()
+        with torch.no_grad():
+            # TODO used to be torch.from_numpy(task_info).float()
+            task_embeddings = encoder(task_info)
+            model.update_embeddings(task_embeddings)
+
+    return model
