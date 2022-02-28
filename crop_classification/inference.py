@@ -16,15 +16,20 @@ class Inference:
     a pytorch jit model on a single tif file.
     """
 
-    def __init__(self, model, device: Optional[torch.device] = None):
+    def __init__(
+        self, model, device: Optional[torch.device] = None, batch_size: int = 64
+    ):
         self.model = model
         self.device = device
 
-        # TODO: normalizing_dict is property of the model in crop-mask should this be the same here?
-        self.normalizing_dict: Dict[str, np.ndarray] = None
+        try:
+            self.normalizing_dict: Dict[str, np.ndarray] = {
+                k: np.array(v) for k, v in self.model.normalizing_dict_jit.items()
+            }
+        except AttributeError:
+            self.normalizing_dict: Dict[str, np.ndarray] = None
 
-        # TODO: batch size is a property of the model in crop-mask should this be the same here?
-        self.batch_size: int = 64
+        self.batch_size: int = batch_size
 
     @staticmethod
     def start_date_from_str(path: Union[Path, str]) -> datetime:
