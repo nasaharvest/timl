@@ -8,19 +8,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from inference import Inference
 
-test_tif = Path(__file__).parent / "test_data/test_2020-02-01_2021-02-01.tif"
+test_tif = Path(__file__).parent / "test_data/373-croplands_2016-02-07_2017-02-01.tif"
 
 
 def test_start_date_from_str():
     actual_start_date = Inference.start_date_from_str(test_tif.name)
-    expected_start_date = datetime(2017, 1, 1, 0, 0)
+    expected_start_date = datetime(2016, 2, 7, 0, 0)
     assert actual_start_date == expected_start_date
 
 
 def test_tif_to_np():
-    x_np, flat_lat, flat_lon = Inference._tif_to_np(
-        test_tif, start_date=datetime(2017, 1, 1, 0, 0)
-    )
+    x_np, flat_lat, flat_lon = Inference._tif_to_np(test_tif, start_date=datetime(2016, 2, 7, 0, 0))
     assert x_np.shape, (289, 24, 18)
     assert flat_lat.shape, (289,)
     assert flat_lon.shape, (289,)
