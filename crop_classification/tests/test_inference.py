@@ -18,7 +18,9 @@ def test_start_date_from_str():
 
 
 def test_tif_to_np():
-    x_np, flat_lat, flat_lon = Inference._tif_to_np(test_tif, start_date=datetime(2016, 2, 7, 0, 0))
+    x_np, flat_lat, flat_lon = Inference._tif_to_np(
+        test_tif, start_date=datetime(2016, 2, 7, 0, 0)
+    )
     assert x_np.shape, (289, 24, 18)
     assert flat_lat.shape, (289,)
     assert flat_lon.shape, (289,)

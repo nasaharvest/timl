@@ -24,7 +24,9 @@ from dl import (
 from typing import Optional
 
 
-def evaluate_model(data_folder: Path = DATAFOLDER_PATH, zero_shot: bool = False) -> None:
+def evaluate_model(
+    data_folder: Path = DATAFOLDER_PATH, zero_shot: bool = False
+) -> None:
 
     evaluation_datasets = CropHarvest.create_benchmark_datasets(data_folder)
     results_folder = data_folder / DL_TIML
