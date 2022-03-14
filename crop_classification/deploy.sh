@@ -7,10 +7,10 @@ export URL="https://crop-type-grxg7bzh2a-uc.a.run.app"
 export MODELS=$(
         python -c \
         "from pathlib import Path; \
-        print(' '.join([p.stem for p in Path('crop_classification/models').glob('*.pt')]))"
+        print(' '.join([p.stem for p in Path('models').glob('*.pt')]))"
 )
 
-docker build -f Dockerfile.croptype . --build-arg MODELS="$MODELS" -t $TAG
+docker build . --build-arg MODELS="$MODELS" -t $TAG
 docker push $TAG
 gcloud run deploy crop-type --image ${TAG}:latest \
         --cpu=4 \
@@ -29,7 +29,7 @@ gcloud run deploy crop-type-management-api --image ${TAG}:latest \
         --port 8081
 
 gcloud functions deploy trigger-croptype \
-    --source=crop_classification/trigger_inference_gcp \
+    --source=trigger_inference_gcp \
     --trigger-bucket=$BUCKET \
     --allow-unauthenticated \
     --runtime=python39 \

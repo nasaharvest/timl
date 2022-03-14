@@ -58,5 +58,7 @@ jobs:
     - name: Deploy Docker inference image
       run: |
         gcloud auth configure-docker us-central1-docker.pkg.dev
-        chmod +x ./deploy_croptype.sh
-        ./deploy_croptype.sh
+        cd crop_classification
+        chmod +x ./deploy.sh
+        ./deploy.sh
+        cd ..

@@ -11,8 +11,8 @@ RUN pip install -r requirements.txt
 RUN pip3 install -i https://test.pypi.org/simple/ cropharvest==0.3.0
 RUN pip3 install torch==1.9.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 FROM reqs as build-torchserve
-COPY crop_classification/torchserve_handler.py /home/model-server/handler.py
-COPY crop_classification/models/*.pt /home/model-server/
+COPY torchserve_handler.py /home/model-server/handler.py
+COPY models/*.pt /home/model-server/
 
 WORKDIR /home/model-server
 
@@ -26,7 +26,7 @@ RUN for m in $MODELS; \
     --export-path=model-store; \
     done
 
-ADD crop_classification/torchserve_start.sh /usr/local/bin/start.sh
+ADD torchserve_start.sh /usr/local/bin/start.sh
 RUN chmod 777 /usr/local/bin/start.sh
 ENV MODELS ${MODELS}
 CMD ["/usr/local/bin/start.sh", "\"${MODELS}\""]
