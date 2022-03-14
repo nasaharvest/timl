@@ -2,12 +2,12 @@ import numpy as np
 import sys
 import torch
 from pathlib import Path
+from cropharvest.inference import Inference
 
 # Needed for running pytest without python -m pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dl.timl import load_timl_model
-from inference import Inference
 
 test_tif = Path(__file__).parent / "test_data/373-croplands_2016-02-07_2017-02-01.tif"
 model_state_dict_path = Path(__file__).parent / "test_data/timl/state_dict.pth"
@@ -57,7 +57,7 @@ def test_ckpt_inference_from_file():
     )
     model.eval()
 
-    inference = Inference(model=model)
+    inference = Inference(model=model, normalizing_dict=None)
     xr_predictions = inference.run(local_path=test_tif)
 
     # Check size
@@ -85,7 +85,7 @@ def test_jit_inference_from_file(tmp_path):
     jit_model = torch.jit.load(tmp_path / f"timl.pt")
     jit_model.eval()
 
-    inference = Inference(model=jit_model)
+    inference = Inference(model=jit_model, normalizing_dict=None)
     xr_predictions = inference.run(local_path=test_tif)
 
     # Check size
