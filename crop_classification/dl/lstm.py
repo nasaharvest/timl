@@ -100,6 +100,7 @@ class Classifier(nn.Module):
         return torch.sigmoid(x)
 
     def save(self, model_name: str, savepath: Path):
+        self.eval()
         sm = torch.jit.script(self)
         model_path = savepath / f"{model_name}.pt"
         if model_path.exists():
