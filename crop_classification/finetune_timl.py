@@ -68,6 +68,12 @@ def main(
     model.eval()
     assert dataset.task.bounding_box.name is not None
     model_name = f"{dataset.task.bounding_box.name}_{dataset.task.target_label}.pt"
+
+    if dataset.normalizing_dict is not None:
+        normalizing_dict_list = {
+            key: val.tolist() for key, val in dataset.normalizing_dict.items()
+        }
+        model.normalizing_dict = normalizing_dict_list
     model.save(model_name, data_folder / DL_TIML)
 
 

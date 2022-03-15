@@ -4,7 +4,7 @@ from pathlib import Path
 import torch
 from torch import nn
 
-from typing import Tuple, Optional, List
+from typing import Dict, Tuple, Optional, List
 
 
 class Classifier(nn.Module):
@@ -64,6 +64,7 @@ class Classifier(nn.Module):
         self.global_classifier = nn.ModuleList(classification_layers)
 
         self.embeddings: Optional[Tuple[List[torch.Tensor], List[torch.Tensor]]] = None
+        self.normalizing_dict: Optional[Dict[str, List[float]]] = None
 
     def update_embeddings(
         self, embeddings: Tuple[List[torch.Tensor], List[torch.Tensor]]
