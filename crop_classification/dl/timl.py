@@ -750,7 +750,7 @@ def load_timl_model(
             input_size=task_info.shape[0],
             encoder_vector_sizes=ENCODER_VECTOR_SIZES,
             encoder_dropout=ENCODER_DROPOUT,
-            num_bands=input_size,  # TODO is this right?
+            num_bands=input_size,  
             num_hidden_layers=NUM_CLASSIFICATION_LAYERS,
             hidden_vector_size=HIDDEN_VECTOR_SIZE,
             num_timesteps=num_timesteps,
@@ -758,7 +758,6 @@ def load_timl_model(
         encoder.load_state_dict(torch.load(encoder_state_dict_path))
         encoder.eval()
         with torch.no_grad():
-            # TODO used to be torch.from_numpy(task_info).float()
             task_embeddings = encoder(task_info)
             model.update_embeddings(task_embeddings)
 
