@@ -88,11 +88,18 @@ def test_jit_inference_from_file(tmp_path):
         encoder_state_dict_path=encoder_state_dict_path,
     )
     model.eval()
+    normalizing_dict = {"mean": [0] * input_size, "std": [1] * input_size}
+    model.normalizing_dict = normalizing_dict
     model.save("timl", tmp_path)
     jit_model = torch.jit.load(tmp_path / f"timl.pt")
     jit_model.eval()
 
-    inference = Inference(model=jit_model, normalizing_dict=None)
+    inference = Inference(
+        model=jit_model,
+        normalizing_dict={
+            key: np.array(val) for key, val in jit_model.normalizing_dict.items()
+        },
+    )
     xr_predictions = inference.run(local_path=test_tif)
 
     # Check size
