@@ -7,8 +7,6 @@ FROM base as reqs
 COPY requirements-inference.txt requirements.txt
 RUN pip3 install --upgrade pip
 RUN pip install -r requirements.txt
-# Temporary while cropharvest 0.3.0 is not released
-RUN pip3 install -i https://test.pypi.org/simple/ cropharvest==0.3.0
 RUN pip3 install torch==1.9.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 FROM reqs as build-torchserve
 COPY torchserve_handler.py /home/model-server/handler.py
