@@ -1,47 +1,34 @@
-import torch
 import numpy as np
+import sys
+import torch
 from pathlib import Path
+from cropharvest.inference import Inference
 
-from dl.lstm import Classifier
-from dl.encoder import TaskEncoder
+# Needed for running pytest without python -m pytest
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from dl.timl import load_timl_model
+
+test_tif = Path(__file__).parent / "test_data/373-croplands_2016-02-07_2017-02-01.tif"
+model_state_dict_path = Path(__file__).parent / "test_data/timl/state_dict.pth"
+encoder_state_dict_path = (
+    Path(__file__).parent / "test_data/timl/encoder_state_dict.pth"
+)
 
 
-def test_jit(tmp_path):
+def test_ckpt_jit_predictions_match(tmp_path):
 
-    input_size, num_timesteps, input_task_info_size = 18, 12, 13
+    input_size, num_timesteps = 18, 12
+    task_info = torch.rand(13)
 
-    # train a model
-    model = Classifier(
+    model = load_timl_model(
+        task_info=task_info,
         input_size=input_size,
-        classifier_base_layers=1,
-        num_classification_layers=2,
-        classifier_dropout=0.2,
-        classifier_vector_size=128,
-    )
-    model.load_state_dict(
-        torch.load(Path(__file__).parent / "test_data/timl/state_dict.pth")
-    )
-
-    model.eval()
-
-    encoder = TaskEncoder(
-        input_size=input_task_info_size,
-        encoder_vector_sizes=[32, 64, 128],
-        encoder_dropout=0.2,
-        num_bands=input_size,
-        num_hidden_layers=2,
-        hidden_vector_size=128,
         num_timesteps=num_timesteps,
+        model_state_dict_path=model_state_dict_path,
+        encoder_state_dict_path=encoder_state_dict_path,
     )
-    encoder.load_state_dict(
-        torch.load(Path(__file__).parent / "test_data/timl/encoder_state_dict.pth")
-    )
-
-    encoder.eval()
-
-    task_info = torch.rand(input_task_info_size)
-
-    model.update_embeddings(encoder(task_info))
+    model.eval()
 
     model.save("timl", tmp_path)
 
@@ -55,3 +42,56 @@ def test_jit(tmp_path):
         y_from_state_dict_model = model(x).numpy()
 
     assert np.allclose(y_from_jit_model, y_from_state_dict_model)
+
+
+def test_ckpt_inference_from_file():
+    input_size, num_timesteps = 18, 12
+    task_info = torch.rand(13)
+
+    model = load_timl_model(
+        task_info=task_info,
+        input_size=input_size,
+        num_timesteps=num_timesteps,
+        model_state_dict_path=model_state_dict_path,
+        encoder_state_dict_path=encoder_state_dict_path,
+    )
+    model.eval()
+
+    inference = Inference(model=model, normalizing_dict=None)
+    xr_predictions = inference.run(local_path=test_tif)
+
+    # Check size
+    assert xr_predictions.dims["lat"] == 17
+    assert xr_predictions.dims["lon"] == 29
+
+    # Check all predictions between 0 and 1
+    assert xr_predictions.min() >= 0
+    assert xr_predictions.max() <= 1
+
+
+def test_jit_inference_from_file(tmp_path):
+    input_size, num_timesteps = 18, 12
+    task_info = torch.rand(13)
+
+    model = load_timl_model(
+        task_info=task_info,
+        input_size=input_size,
+        num_timesteps=num_timesteps,
+        model_state_dict_path=model_state_dict_path,
+        encoder_state_dict_path=encoder_state_dict_path,
+    )
+    model.eval()
+    model.save("timl", tmp_path)
+    jit_model = torch.jit.load(tmp_path / f"timl.pt")
+    jit_model.eval()
+
+    inference = Inference(model=jit_model, normalizing_dict=None)
+    xr_predictions = inference.run(local_path=test_tif)
+
+    # Check size
+    assert xr_predictions.dims["lat"] == 17
+    assert xr_predictions.dims["lon"] == 29
+
+    # Check all predictions between 0 and 1
+    assert xr_predictions.min() >= 0
+    assert xr_predictions.max() <= 1
