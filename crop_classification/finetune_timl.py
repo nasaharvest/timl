@@ -57,6 +57,7 @@ def main(
         num_timesteps=num_timesteps,
         model_state_dict_path=data_folder / DL_TIML / "state_dict.pth",
         encoder_state_dict_path=data_folder / DL_TIML / "encoder_state_dict.pth",
+        normalizing_dict=dataset.normalizing_dict,
     )
 
     model = train(
@@ -68,15 +69,9 @@ def main(
     model.eval()
     assert dataset.task.bounding_box.name is not None
     model_name = f"{dataset.task.bounding_box.name}_{dataset.task.target_label}.pt"
-
-    if dataset.normalizing_dict is not None:
-        normalizing_dict_list = {
-            key: val.tolist() for key, val in dataset.normalizing_dict.items()
-        }
-        model.normalizing_dict = normalizing_dict_list
     model.save(model_name, data_folder / DL_TIML)
 
 
 if __name__ == "__main__":
 
-    main(DATAFOLDER_PATH, "Kenya", "maize")
+    main(DATAFOLDER_PATH, "Malawi", "maize")
