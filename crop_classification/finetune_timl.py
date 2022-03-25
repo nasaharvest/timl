@@ -3,12 +3,18 @@ import torch
 from torch import nn
 import numpy as np
 
-from cropharvest.datasets import Task, CropHarvest
-from cropharvest.countries import get_country_bbox, BBox
+from cropharvest.countries import BBox
 from cropharvest.utils import DATAFOLDER_PATH
 from cropharvest.engineer import TestInstance
 
-from dl import load_timl_model, TrainDataLoader, train
+from dl import (
+    load_timl_model,
+    TrainDataLoader,
+    train,
+    get_largest_country_bbox,
+    TIMLTask,
+    TIMLCropHarvest,
+)
 from config import DL_TIML
 
 from typing import Union, Tuple
@@ -18,36 +24,40 @@ def _construct_datasets(
     data_folder: Path,
     country: Union[str, BBox],
     target_label: str,
+    classification_label: str,
     balance_negative_crops: bool = False,
     val_ratio: float = 0.2,
-) -> Tuple[CropHarvest, CropHarvest]:
+) -> Tuple[TIMLCropHarvest, TIMLCropHarvest]:
     if isinstance(country, BBox):
         assert (
             country.name is not None
         ), "country BBox requires a `name` attribute to save the model"
         country_bbox = country
     else:
-        # get the largest polygon for the country name, since this will
-        # likely be the primary polygon
-        country_bbox = max(get_country_bbox(country), key=lambda c: c.area)
+        country_bbox = get_largest_country_bbox(country)
 
-    task = Task(
-        country_bbox, target_label, balance_negative_crops=balance_negative_crops
+    task = TIMLTask(
+        country_bbox,
+        target_label,
+        balance_negative_crops=balance_negative_crops,
+        classification_label=classification_label,
     )
 
     kwargs = {"root": data_folder, "task": task, "val_ratio": val_ratio}
 
-    return CropHarvest(**kwargs, is_val=False), CropHarvest(**kwargs, is_val=True)
+    return TIMLCropHarvest(**kwargs, is_val=False), TIMLCropHarvest(
+        **kwargs, is_val=True
+    )
 
 
-def _evaluate_on_dataset(model: nn.Module, dataset: CropHarvest):
+def _evaluate_on_dataset(model: nn.Module, dataset: TIMLCropHarvest):
 
     # construct a test instance
     x, y = dataset.as_array(num_samples=-1)
     test_instance = TestInstance(x=x, y=y, lats=np.ones_like(y), lons=np.ones_like(y))
     model.eval()
     with torch.no_grad():
-        preds = model(torch.from_numpy(x)).numpy()
+        preds = model(torch.from_numpy(x).float()).numpy()
 
     return test_instance.evaluate_predictions(preds)
 
@@ -56,12 +66,18 @@ def main(
     data_folder: Path,
     country: Union[str, BBox],
     target_label: str,
+    classification_label: str,
     balance_negative_crops: bool = False,
     val_ratio: float = 0.2,
 ):
 
     train_dataset, val_dataset = _construct_datasets(
-        data_folder, country, target_label, balance_negative_crops, val_ratio
+        data_folder,
+        country,
+        target_label,
+        classification_label,
+        balance_negative_crops,
+        val_ratio,
     )
 
     task_info = TrainDataLoader.task_to_task_info(train_dataset.task)
@@ -99,4 +115,4 @@ def main(
 
 if __name__ == "__main__":
 
-    main(DATAFOLDER_PATH, "Malawi", "maize")
+    main(DATAFOLDER_PATH, "Kenya", "maize", "cereals")

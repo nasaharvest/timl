@@ -775,7 +775,7 @@ def load_timl_model(
         encoder.load_state_dict(torch.load(encoder_state_dict_path))
         encoder.eval()
         with torch.no_grad():
-            task_embeddings = encoder(task_info)
+            task_embeddings = encoder(torch.from_numpy(task_info).float())
             model.update_embeddings(task_embeddings)
 
     return model
