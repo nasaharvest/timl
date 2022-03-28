@@ -30,10 +30,17 @@ def test_ckpt_jit_predictions_match(tmp_path):
     )
     model.eval()
 
+    normalizing_dict = {"mean": [1, 2, 3], "std": [4, 5, 6]}
+    model.normalizing_dict = normalizing_dict
+
     model.save("timl", tmp_path)
 
     jit_model = torch.jit.load(tmp_path / f"timl.pt")
     jit_model.eval()
+
+    assert jit_model.normalizing_dict is not None
+    for key, val in normalizing_dict.items():
+        assert jit_model.normalizing_dict[key] == val
 
     x = torch.rand(5, num_timesteps, input_size)
 
@@ -81,11 +88,18 @@ def test_jit_inference_from_file(tmp_path):
         encoder_state_dict_path=encoder_state_dict_path,
     )
     model.eval()
+    normalizing_dict = {"mean": [0] * input_size, "std": [1] * input_size}
+    model.normalizing_dict = normalizing_dict
     model.save("timl", tmp_path)
     jit_model = torch.jit.load(tmp_path / f"timl.pt")
     jit_model.eval()
 
-    inference = Inference(model=jit_model, normalizing_dict=None)
+    inference = Inference(
+        model=jit_model,
+        normalizing_dict={
+            key: np.array(val) for key, val in jit_model.normalizing_dict.items()
+        },
+    )
     xr_predictions = inference.run(local_path=test_tif)
 
     # Check size

@@ -1,3 +1,4 @@
+from encodings import normalize_encoding
 from pathlib import Path
 import json
 import dill
@@ -726,16 +727,31 @@ def train_timl_model(
     return model.model
 
 
+def _check_normalizing_dict(normalizing_dict: Optional[Dict]) -> Dict:
+    if normalizing_dict is None:
+        return None
+
+    for expected_key in ["mean", "std"]:
+        assert expected_key in normalizing_dict.keys()
+
+    if isinstance(normalizing_dict["mean"], list):
+        return normalizing_dict
+    else:
+        return {key: val.tolist() for key, val in normalizing_dict.items()}
+
+
 def load_timl_model(
     task_info: np.ndarray,
     input_size: int,
     num_timesteps: int,
     model_state_dict_path: Path,
     encoder_state_dict_path: Optional[Path],
+    normalizing_dict: Optional[Dict],
 ):
     """
     Load a trained TIML model
     """
+
     model = Classifier(
         input_size=input_size,
         classifier_base_layers=CLASSIFIER_BASE_LAYERS,
@@ -744,6 +760,7 @@ def load_timl_model(
         classifier_vector_size=HIDDEN_VECTOR_SIZE,
     )
     model.load_state_dict(torch.load(model_state_dict_path))
+    model.normalizing_dict = _check_normalizing_dict(normalizing_dict)
 
     if encoder_state_dict_path.exists():
         encoder = TaskEncoder(
@@ -758,7 +775,7 @@ def load_timl_model(
         encoder.load_state_dict(torch.load(encoder_state_dict_path))
         encoder.eval()
         with torch.no_grad():
-            task_embeddings = encoder(task_info)
+            task_embeddings = encoder(torch.from_numpy(task_info).float())
             model.update_embeddings(task_embeddings)
 
     return model
