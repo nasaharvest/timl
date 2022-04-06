@@ -108,7 +108,7 @@ def main(
 
     assert train_dataset.task.bounding_box.name is not None
     model_name = (
-        f"{train_dataset.task.bounding_box.name}_{train_dataset.task.target_label}.pt"
+        f"{train_dataset.task.bounding_box.name}_{train_dataset.task.target_label}"
     )
     model.save(model_name, data_folder / DL_TIML)
 
