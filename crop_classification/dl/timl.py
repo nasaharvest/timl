@@ -118,6 +118,7 @@ class Learner:
         concatenate_task_info: bool = False,
         num_encoder_channels_per_group: Union[int, List[int]] = 16,
         protomaml: bool = False,
+        add_awareness: bool = True,
     ) -> None:
 
         # update val size needs to be divided by 2 since
@@ -145,7 +146,8 @@ class Learner:
             "encoder_vector_sizes": encoder_vector_sizes,
             "concatenate_task_info": concatenate_task_info,
             "num_encoder_channels_per_group": num_encoder_channels_per_group,
-            "protomaml": protomaml
+            "protomaml": protomaml,
+            "add_awareness": add_awareness
             # "git-describe": subprocess.check_output(["git", "describe", "--always"])
             # .strip()
             # .decode("utf-8"),
@@ -196,7 +198,7 @@ class Learner:
 
         self.encoder: Optional[nn.Module] = None
         self.concatenate_task_info = concatenate_task_info
-        self.add_awareness = not concatenate_task_info
+        self.add_awareness = add_awareness
         if self.add_awareness:
             if isinstance(encoder_vector_sizes, int):
                 encoder_vector_sizes = [encoder_vector_sizes]
@@ -683,6 +685,7 @@ def train_timl_model(
     schedule: bool = True,
     task_noise_scale: float = 0.1,
     protomaml: bool = False,
+    add_awareness: bool = True,
 ) -> Classifier:
     r"""
     Initialize a classifier and pretrain it using model-agnostic meta-learning (MAML)
@@ -725,6 +728,7 @@ def train_timl_model(
     :param task_noise_scale: The scale of the gaussian noise to add to the task
         information during training
     :param protomaml: Whether or not to train a protoMAML model instead of a MAML model
+    :param add_awareness: Whether or not to train an encoder
     """
     model = Learner(
         root,
@@ -740,6 +744,7 @@ def train_timl_model(
         encoder_dropout,
         concatenate_task_info,
         protomaml=protomaml,
+        add_awareness=add_awareness,
     )
 
     model.train(
