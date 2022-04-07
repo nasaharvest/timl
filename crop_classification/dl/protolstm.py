@@ -110,7 +110,9 @@ class ProtoClassifier(nn.Module):
         # keep the 1st dimension of the predictions (i.e. the predictions
         # about the positive class) so that we can treat this as binary
         # cross entropy
-        return torch.softmax(torch.matmul(x, proto_w) + proto_b, 1)[:, 1]
+        return torch.unsqueeze(
+            torch.softmax(torch.matmul(x, proto_w) + proto_b, 1)[:, 1], 1
+        )
 
     def save(self, model_name: str, savepath: Path):
         self.eval()
