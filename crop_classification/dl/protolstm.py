@@ -70,7 +70,7 @@ class ProtoClassifier(nn.Module):
         """
         # Sums each class' embeddings. [num classes, embedding size].
         # we assume only the binary case is considered
-        labels = F.one_hot(labels, num_classes=2)
+        labels = F.one_hot(labels.long(), num_classes=2)
         class_sums = torch.sum(
             torch.unsqueeze(labels, 2) * torch.unsqueeze(embeddings, 1), 0
         )
@@ -110,7 +110,7 @@ class ProtoClassifier(nn.Module):
         # keep the 1st dimension of the predictions (i.e. the predictions
         # about the positive class) so that we can treat this as binary
         # cross entropy
-        return torch.softmax(torch.matmul(x, proto_w) + proto_b)[:, 1]
+        return torch.softmax(torch.matmul(x, proto_w) + proto_b, 1)[:, 1]
 
     def save(self, model_name: str, savepath: Path):
         self.eval()
