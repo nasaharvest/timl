@@ -662,7 +662,7 @@ class Learner:
 def train_timl_model(
     root,
     model_name: str,
-    encoder_vector_sizes: Union[List[int], int],
+    encoder_vector_sizes: Union[List[int], int] = ENCODER_VECTOR_SIZES,
     classifier_vector_size: int = HIDDEN_VECTOR_SIZE,
     classifier_dropout: float = CLASSIFIER_DROPOUT,
     classifier_base_layers: int = CLASSIFIER_BASE_LAYERS,
