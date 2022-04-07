@@ -1,4 +1,3 @@
-from encodings import normalize_encoding
 from pathlib import Path
 import json
 import dill
@@ -24,6 +23,7 @@ from .config import (
     ENCODER_DROPOUT,
 )
 from .lstm import Classifier
+from .protolstm import ProtoClassifier
 from .encoder import TaskEncoder
 from .datasets import TIMLCropHarvestLabels, TIMLCropHarvest, TIMLTask
 
@@ -117,11 +117,21 @@ class Learner:
         encoder_dropout: float = 0.2,
         concatenate_task_info: bool = False,
         num_encoder_channels_per_group: Union[int, List[int]] = 16,
+        protomaml: bool = False,
     ) -> None:
 
         # update val size needs to be divided by 2 since
         # k is multiplied by 2 (k = number of positive / negative vals)
         min_total_k = k + (update_val_size // 2)
+
+        if protomaml:
+            if num_classification_layers > 0:
+                print(
+                    "No classification layers are used for protoMAML - "
+                    "changing `num_classification_layers` from "
+                    f"{num_classification_layers} to 0"
+                )
+                num_classification_layers = 0
 
         self.model_info: Dict = {
             "k": k,
@@ -135,6 +145,7 @@ class Learner:
             "encoder_vector_sizes": encoder_vector_sizes,
             "concatenate_task_info": concatenate_task_info,
             "num_encoder_channels_per_group": num_encoder_channels_per_group,
+            "protomaml": protomaml
             # "git-describe": subprocess.check_output(["git", "describe", "--always"])
             # .strip()
             # .decode("utf-8"),
@@ -165,13 +176,23 @@ class Learner:
             input_size = self.train_dl.num_bands + self.train_dl.task_info_size
         else:
             input_size = self.train_dl.num_bands
-        self.model = Classifier(
-            input_size=input_size,
-            classifier_base_layers=classifier_base_layers,
-            classifier_dropout=classifier_dropout,
-            classifier_vector_size=classifier_vector_size,
-            num_classification_layers=num_classification_layers,
-        )
+
+        self.protomaml = protomaml
+        if not protomaml:
+            self.model = Classifier(
+                input_size=input_size,
+                classifier_base_layers=classifier_base_layers,
+                classifier_dropout=classifier_dropout,
+                classifier_vector_size=classifier_vector_size,
+                num_classification_layers=num_classification_layers,
+            )
+        else:
+            self.model = ProtoClassifier(
+                input_size=input_size,
+                classifier_base_layers=classifier_base_layers,
+                classifier_dropout=classifier_dropout,
+                classifier_vector_size=classifier_vector_size,
+            )
 
         self.encoder: Optional[nn.Module] = None
         self.concatenate_task_info = concatenate_task_info
@@ -249,10 +270,17 @@ class Learner:
         num_adaptation_steps = (
             len(adaptation_data) // batch_size
         )  # should divide cleanly
+
+        kwargs = {}
+        if self.protomaml:
+            kwargs.update(
+                {"support_x": adaptation_data, "support_y": adaptation_labels}
+            )
+
         for i in range(num_adaptation_steps):
             x = adaptation_data[i * batch_size : (i + 1) * batch_size]
             y = adaptation_labels[i * batch_size : (i + 1) * batch_size]
-            train_preds = learner(x).squeeze(dim=1)
+            train_preds = learner(x, **kwargs).squeeze(dim=1)
             train_error = self.loss(train_preds, y)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -265,7 +293,7 @@ class Learner:
 
         # Evaluate the adapted model
         if len(evaluation_data) > 0:
-            preds = learner(evaluation_data).squeeze(dim=1)
+            preds = learner(evaluation_data, **kwargs).squeeze(dim=1)
             valid_error = self.loss(preds, evaluation_labels)
             if calc_auc_roc:
                 valid_auc_roc = roc_auc_score(
@@ -654,6 +682,7 @@ def train_timl_model(
     checkpoint_every: int = 20,
     schedule: bool = True,
     task_noise_scale: float = 0.1,
+    protomaml: bool = False,
 ) -> Classifier:
     r"""
     Initialize a classifier and pretrain it using model-agnostic meta-learning (MAML)
@@ -695,6 +724,7 @@ def train_timl_model(
         training
     :param task_noise_scale: The scale of the gaussian noise to add to the task
         information during training
+    :param protomaml: Whether or not to train a protoMAML model instead of a MAML model
     """
     model = Learner(
         root,
@@ -709,6 +739,7 @@ def train_timl_model(
         encoder_vector_sizes,
         encoder_dropout,
         concatenate_task_info,
+        protomaml=protomaml,
     )
 
     model.train(
