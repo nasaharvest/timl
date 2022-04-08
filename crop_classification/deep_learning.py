@@ -91,6 +91,7 @@ def evaluate_model(
                         dataset,
                         sample_size,
                         task_info_to_concatenate=task_info_to_concatenate,
+                        protomaml=True
                     )
                     model.eval()
 
