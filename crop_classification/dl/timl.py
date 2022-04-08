@@ -813,7 +813,7 @@ def load_timl_model(
             encoder_vector_sizes=ENCODER_VECTOR_SIZES,
             encoder_dropout=ENCODER_DROPOUT,
             num_bands=input_size,
-            num_hidden_layers=NUM_CLASSIFICATION_LAYERS,
+            num_hidden_layers=NUM_CLASSIFICATION_LAYERS if not protomaml else 0,
             hidden_vector_size=HIDDEN_VECTOR_SIZE,
             num_timesteps=num_timesteps,
         )
