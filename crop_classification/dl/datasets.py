@@ -66,7 +66,7 @@ class TIMLCropHarvest(CropHarvest):
     ):
         super().__init__(root, task, download, val_ratio, is_val)
 
-        labels = CropHarvestLabels(root, download=download)
+        labels = TIMLCropHarvestLabels(root, download=download)
 
         positive_paths, negative_paths = labels.construct_positive_and_negative_labels(
             task, filter_test=True
@@ -122,7 +122,7 @@ class TIMLCropHarvest(CropHarvest):
 
             country_bboxes = countries.get_country_bbox(country)
             for country_bbox in country_bboxes:
-                task = Task(
+                task = TIMLTask(
                     country_bbox,
                     crop,
                     balance_negative_crops,
@@ -142,7 +142,7 @@ class TIMLCropHarvest(CropHarvest):
             output_datasets.append(
                 cls(
                     root,
-                    Task(country_bbox, None, test_identifier=test_dataset),
+                    TIMLTask(country_bbox, None, test_identifier=test_dataset),
                     download=download,
                 )
             )
