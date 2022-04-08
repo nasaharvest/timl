@@ -91,13 +91,15 @@ def evaluate_model(
                         dataset,
                         sample_size,
                         task_info_to_concatenate=task_info_to_concatenate,
-                        protomaml=True
+                        protomaml=True,
                     )
                     model.eval()
 
                 input_dict = {}
                 if protomaml:
-                    support_x, support_y = dataset.sample(k=10, deterministic=False)
+                    support_x, support_y = dataset.as_array(
+                        flatten_x=False, num_samples=None
+                    )
                     input_dict.update(
                         {
                             "support_x": torch.from_numpy(support_x).float(),
