@@ -70,6 +70,12 @@ def evaluate_model(
                     encoder_state_dict_path=data_folder
                     / DL_TIML
                     / "encoder_state_dict.pth",
+                    # we explicitly set it to None here, since we
+                    # don't plan on saving the model. This doesn't
+                    # mean the data isn't normalized; just
+                    # that the normalizing dict won't be saved alongside the model
+                    # if we call model.save
+                    normalizing_dict=None,
                     protomaml=protomaml,
                 )
 
