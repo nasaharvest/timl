@@ -3,7 +3,7 @@ import torch
 from pathlib import Path
 import json
 
-from cropharvest.datasets import CropHarvest
+from dl.datasets import TIMLCropHarvest
 from cropharvest.utils import DATAFOLDER_PATH
 from cropharvest.engineer import TestInstance
 
@@ -28,7 +28,7 @@ def evaluate_model(
     data_folder: Path = DATAFOLDER_PATH, zero_shot: bool = False
 ) -> None:
 
-    evaluation_datasets = CropHarvest.create_benchmark_datasets(data_folder)
+    evaluation_datasets = TIMLCropHarvest.create_benchmark_datasets(data_folder)
     results_folder = data_folder / DL_TIML
     results_folder.mkdir(exist_ok=True)
 

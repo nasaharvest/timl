@@ -1,11 +1,9 @@
 from dataclasses import dataclass
 import warnings
-from pathlib import Path
 
 from cropharvest.countries import BBox
 from cropharvest.datasets import Task, CropHarvestLabels, CropHarvest
 from cropharvest.config import TEST_REGIONS, TEST_DATASETS
-from cropharvest.utils import deterministic_shuffle
 from cropharvest import countries
 
 from .config import TEST_CROP_TO_CLASSIFICATION
@@ -56,45 +54,6 @@ class TIMLCropHarvestLabels(CropHarvestLabels):
 
 
 class TIMLCropHarvest(CropHarvest):
-    def __init__(
-        self,
-        root,
-        task: Optional[TIMLTask] = None,
-        download=False,
-        val_ratio: float = 0.0,
-        is_val: bool = False,
-    ):
-        super().__init__(root, task, download, val_ratio, is_val)
-
-        labels = CropHarvestLabels(root, download=download)
-
-        positive_paths, negative_paths = labels.construct_positive_and_negative_labels(
-            task, filter_test=True
-        )
-        if val_ratio > 0.0:
-            # the fixed seed is to ensure the validation set is always
-            # different from the training set
-            positive_paths = deterministic_shuffle(positive_paths, seed=42)
-            negative_paths = deterministic_shuffle(negative_paths, seed=42)
-            if is_val:
-                positive_paths = positive_paths[: int(len(positive_paths) * val_ratio)]
-                negative_paths = negative_paths[: int(len(negative_paths) * val_ratio)]
-            else:
-                positive_paths = positive_paths[int(len(positive_paths) * val_ratio) :]
-                negative_paths = negative_paths[int(len(negative_paths) * val_ratio) :]
-
-        self.filepaths: List[Path] = positive_paths + negative_paths
-        self.y_vals: List[int] = [1] * len(positive_paths) + [0] * len(negative_paths)
-        self.positive_indices = list(range(len(positive_paths)))
-        self.negative_indices = list(
-            range(len(positive_paths), len(positive_paths) + len(negative_paths))
-        )
-
-        # used in the sample() function, to ensure filepaths are sampled without
-        # duplication as much as possible
-        self.sampled_positive_indices: List[int] = []
-        self.sampled_negative_indices: List[int] = []
-
     @classmethod
     def create_benchmark_datasets(
         cls,
@@ -122,7 +81,7 @@ class TIMLCropHarvest(CropHarvest):
 
             country_bboxes = countries.get_country_bbox(country)
             for country_bbox in country_bboxes:
-                task = Task(
+                task = TIMLTask(
                     country_bbox,
                     crop,
                     balance_negative_crops,
@@ -142,7 +101,7 @@ class TIMLCropHarvest(CropHarvest):
             output_datasets.append(
                 cls(
                     root,
-                    Task(country_bbox, None, test_identifier=test_dataset),
+                    TIMLTask(country_bbox, None, test_identifier=test_dataset),
                     download=download,
                 )
             )
