@@ -25,7 +25,9 @@ from typing import Optional
 
 
 def evaluate_model(
-    data_folder: Path = DATAFOLDER_PATH, zero_shot: bool = False
+    data_folder: Path = DATAFOLDER_PATH,
+    zero_shot: bool = False,
+    protomaml: bool = False,
 ) -> None:
 
     evaluation_datasets = CropHarvest.create_benchmark_datasets(data_folder)
@@ -68,6 +70,7 @@ def evaluate_model(
                     encoder_state_dict_path=data_folder
                     / DL_TIML
                     / "encoder_state_dict.pth",
+                    protomaml=protomaml,
                 )
 
                 # train a model
@@ -133,4 +136,4 @@ if __name__ == "__main__":
     else:
         train_timl_model(data_folder, model_name=DL_TIML)
 
-    evaluate_model(data_folder, zero_shot=True)
+    evaluate_model(data_folder, zero_shot=False, protomaml=True)

@@ -783,18 +783,27 @@ def load_timl_model(
     model_state_dict_path: Path,
     encoder_state_dict_path: Optional[Path],
     normalizing_dict: Optional[Dict],
+    protomaml: bool,
 ):
     """
     Load a trained TIML model
     """
 
-    model = Classifier(
-        input_size=input_size,
-        classifier_base_layers=CLASSIFIER_BASE_LAYERS,
-        num_classification_layers=NUM_CLASSIFICATION_LAYERS,
-        classifier_dropout=CLASSIFIER_DROPOUT,
-        classifier_vector_size=HIDDEN_VECTOR_SIZE,
-    )
+    if protomaml:
+        model = ProtoClassifier(
+            input_size=input_size,
+            classifier_base_layers=CLASSIFIER_BASE_LAYERS,
+            classifier_dropout=CLASSIFIER_DROPOUT,
+            classifier_vector_size=HIDDEN_VECTOR_SIZE,
+        )
+    else:
+        model = Classifier(
+            input_size=input_size,
+            classifier_base_layers=CLASSIFIER_BASE_LAYERS,
+            num_classification_layers=NUM_CLASSIFICATION_LAYERS,
+            classifier_dropout=CLASSIFIER_DROPOUT,
+            classifier_vector_size=HIDDEN_VECTOR_SIZE,
+        )
     model.load_state_dict(torch.load(model_state_dict_path))
     model.normalizing_dict = _check_normalizing_dict(normalizing_dict)
 
