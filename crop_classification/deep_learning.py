@@ -94,6 +94,16 @@ def evaluate_model(
                     )
                     model.eval()
 
+                input_dict = {}
+                if protomaml:
+                    support_x, support_y = dataset.sample(k=10, deterministic=False)
+                    input_dict.update(
+                        {
+                            "support_x": torch.from_numpy(support_x).float(),
+                            "support_y": torch.from_numpy(support_y).float(),
+                        }
+                    )
+
                 for test_id, test_instance in dataset.test_data(max_size=10000):
 
                     results_json = results_folder / f"{test_id}_{json_suffix}"
@@ -108,7 +118,7 @@ def evaluate_model(
                             test_x = concatenate_task_info(
                                 test_x, task_info_to_concatenate
                             )
-                        preds = model(test_x).squeeze(dim=1).numpy()
+                        preds = model(test_x, **input_dict).squeeze(dim=1).numpy()
                     results = test_instance.evaluate_predictions(preds)
 
                     with Path(results_json).open("w") as f:

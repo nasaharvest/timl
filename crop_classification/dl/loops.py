@@ -20,6 +20,7 @@ def train(
     learning_rate: float = 0.001,
     k: int = 10,
     task_info_to_concatenate: Optional[torch.tensor] = None,
+    protomaml: bool = False,
 ) -> Classifier:
     r"""
     Train the classifier on the dataset.
@@ -36,9 +37,18 @@ def train(
     opt = SGD(classifier.parameters(), lr=learning_rate)
     loss_fn = nn.BCELoss(reduction="mean")
 
+    input_dict = {}
+
     if sample_size is not None:
         train_batch_total = dataset.sample(sample_size // 2, deterministic=True)
         state: List[int] = []
+        if protomaml:
+            input_dict.update(
+                {
+                    "support_x": torch.from_numpy(train_batch_total[0]).float(),
+                    "support_y": torch.from_numpy(train_batch_total[1]).float(),
+                }
+            )
 
     for i in tqdm(range(num_grad_steps)):
         if i != 0:
@@ -56,11 +66,19 @@ def train(
             )
         else:
             train_x, train_y = dataset.sample(k, deterministic=False)
+            if protomaml:
+                support_x, support_y = dataset.sample(k, deterministic=False)
+                input_dict.update(
+                    {
+                        "support_x": torch.from_numpy(support_x).float(),
+                        "support_y": torch.from_numpy(support_y).float(),
+                    }
+                )
 
         train_x_t = torch.from_numpy(train_x).float()
         if task_info_to_concatenate is not None:
             train_x_t = concatenate_task_info(train_x_t, task_info_to_concatenate)
-        preds = classifier(train_x_t).squeeze(dim=1)
+        preds = classifier(train_x_t, **input_dict).squeeze(dim=1)
         loss = loss_fn(preds, torch.from_numpy(train_y).float())
 
         loss.backward()
