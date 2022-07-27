@@ -118,7 +118,7 @@ class Learner:
         concatenate_task_info: bool = False,
         num_encoder_channels_per_group: Union[int, List[int]] = 16,
         mmaml: bool = False,
-        task_awareness: bool = True
+        task_awareness: bool = True,
     ) -> None:
 
         assert not (mmaml and task_awareness), "Can't have both MMAML and TIML"
@@ -338,7 +338,7 @@ class Learner:
 
         encoder_opt: Optional[torch.optim.Optimizer] = None
         encoder_scheduler = None
-        if ((self.task_awareness) or (self.mmaml)):
+        if (self.task_awareness) or (self.mmaml):
             assert self.encoder is not None
             encoder_opt = optim.Adam(self.encoder.parameters(), encoder_lr)
             if schedule:
@@ -562,7 +562,7 @@ class Learner:
         )
 
         # save the encoder seperately, to make it easier to investigate
-        if ((self.task_awareness) or (self.mmaml)):
+        if (self.task_awareness) or (self.mmaml):
             assert self.encoder is not None
             encoder_files = list(self.version_folder.glob("encoder_state_dict*"))
             if len(encoder_files) > 0:
@@ -675,6 +675,8 @@ def train_timl_model(
     checkpoint_every: int = 20,
     schedule: bool = True,
     task_noise_scale: float = 0.1,
+    task_awareness: bool = True,
+    mmaml: bool = False,
 ) -> Classifier:
     r"""
     Initialize a classifier and pretrain it using model-agnostic meta-learning (MAML)
@@ -730,6 +732,8 @@ def train_timl_model(
         encoder_vector_sizes,
         encoder_dropout,
         concatenate_task_info,
+        task_awareness=task_awareness,
+        mmaml=mmaml,
     )
 
     model.train(

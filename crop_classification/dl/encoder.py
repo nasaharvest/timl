@@ -117,7 +117,7 @@ class MMAMLEncoder(nn.Module):
             input_size=num_bands + 1,
             hidden_size=encoder_hidden_vector_size,
             dropout=encoder_dropout,
-            batch_first=True
+            batch_first=True,
         )
 
         self.gamma_layer_names: List[str] = []
@@ -140,13 +140,15 @@ class MMAMLEncoder(nn.Module):
             else:
                 gamma_layer = nn.Sequential(
                     nn.Linear(
-                        in_features=encoder_hidden_vector_size, out_features=out_features
+                        in_features=encoder_hidden_vector_size,
+                        out_features=out_features,
                     ),
                     nn.GELU() if i > 0 else nn.Sigmoid(),
                 )
                 beta_layer = nn.Sequential(
                     nn.Linear(
-                        in_features=encoder_hidden_vector_size, out_features=out_features
+                        in_features=encoder_hidden_vector_size,
+                        out_features=out_features,
                     ),
                     nn.GELU(),
                 )
@@ -160,7 +162,9 @@ class MMAMLEncoder(nn.Module):
 
         self.dropout = nn.Dropout(p=encoder_dropout)
 
-    def forward(self, x: torch.Tensor, y: torch.Tensor) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
+    def forward(
+        self, x: torch.Tensor, y: torch.Tensor
+    ) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
 
         # github.com/vuoristo/MMAML-Regression/blob/master/maml/models/lstm_embedding_model.py#L36
         x = torch.cat([x, torch.stack([y.expand(1, -1).T] * x.shape[1], dim=1)], dim=-1)
