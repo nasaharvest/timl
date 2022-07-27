@@ -122,7 +122,7 @@ class TIMLCropHarvest(CropHarvest):
 
             country_bboxes = countries.get_country_bbox(country)
             for country_bbox in country_bboxes:
-                task = Task(
+                task = TIMLTask(
                     country_bbox,
                     crop,
                     balance_negative_crops,
@@ -142,7 +142,7 @@ class TIMLCropHarvest(CropHarvest):
             output_datasets.append(
                 cls(
                     root,
-                    Task(country_bbox, None, test_identifier=test_dataset),
+                    TIMLTask(country_bbox, None, test_identifier=test_dataset),
                     download=download,
                 )
             )
