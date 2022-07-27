@@ -1,6 +1,8 @@
 from torch import nn
 import torch
 
+from .lstm import UnrolledLSTM
+
 from typing import List, Tuple, Union, Optional
 
 
@@ -88,6 +90,84 @@ class TaskEncoder(nn.Module):
     def forward(self, x: torch.Tensor) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
 
         x = self.initial_encoder(x.unsqueeze(0)).squeeze(0)
+
+        gamma_outputs: List[torch.Tensor] = []
+        beta_outputs: List[torch.Tensor] = []
+        for layer_name in self.gamma_layer_names:
+            gamma_outputs.append(self.dropout(self.__getattr__(layer_name)(x)))
+        for layer_name in self.beta_layer_names:
+            beta_outputs.append(self.dropout(self.__getattr__(layer_name)(x)))
+        return (gamma_outputs, beta_outputs)
+
+
+class MMAMLEncoder(nn.Module):
+    def __init__(
+        self,
+        num_bands: int,
+        num_hidden_layers: int,
+        encoder_hidden_vector_size: int,
+        classifier_hidden_vector_size: int,
+        encoder_dropout: float,
+        num_timesteps: int,
+    ) -> None:
+        super().__init__()
+
+        self.initial_encoder = UnrolledLSTM(
+            # we add the target to the
+            input_size=num_bands + 1,
+            hidden_size=encoder_hidden_vector_size,
+            dropout=encoder_dropout,
+            batch_first=True
+        )
+
+        self.gamma_layer_names: List[str] = []
+        self.beta_layer_names: List[str] = []
+        for i in range(num_hidden_layers + 1):
+            # these will want outputs of shape [hidden_vector_size, hidden_vector_size]
+            out_features = num_bands if i == 0 else classifier_hidden_vector_size
+            if i == 0:
+                # the nonlinearity is captured in the linear3d layer
+                gamma_layer = Linear3d(
+                    in_features=encoder_hidden_vector_size,
+                    out_shape=(num_timesteps, out_features),
+                    sum_from=1,
+                )
+                beta_layer = Linear3d(
+                    in_features=encoder_hidden_vector_size,
+                    out_shape=(num_timesteps, out_features),
+                    sum_from=0,
+                )
+            else:
+                gamma_layer = nn.Sequential(
+                    nn.Linear(
+                        in_features=encoder_hidden_vector_size, out_features=out_features
+                    ),
+                    nn.GELU() if i > 0 else nn.Sigmoid(),
+                )
+                beta_layer = nn.Sequential(
+                    nn.Linear(
+                        in_features=encoder_hidden_vector_size, out_features=out_features
+                    ),
+                    nn.GELU(),
+                )
+
+            gamma_layer_name = f"task_embedding_{i}_gamma"
+            beta_layer_name = f"task_embedding_{i}_beta"
+            self.__setattr__(gamma_layer_name, gamma_layer)
+            self.__setattr__(beta_layer_name, beta_layer)
+            self.gamma_layer_names.append(gamma_layer_name)
+            self.beta_layer_names.append(beta_layer_name)
+
+        self.dropout = nn.Dropout(p=encoder_dropout)
+
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
+
+        # github.com/vuoristo/MMAML-Regression/blob/master/maml/models/lstm_embedding_model.py#L36
+        x = torch.cat([x, torch.stack([y.expand(1, -1).T] * x.shape[1], dim=1)], dim=-1)
+        for _, lstm in enumerate(self.base):
+            x, (hn, _) = lstm(x)
+            x = x[:, 0, :, :]
+        x = hn[-1, :, :]
 
         gamma_outputs: List[torch.Tensor] = []
         beta_outputs: List[torch.Tensor] = []

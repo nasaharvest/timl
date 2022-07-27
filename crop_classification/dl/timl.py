@@ -24,7 +24,7 @@ from .config import (
     ENCODER_DROPOUT,
 )
 from .lstm import Classifier
-from .encoder import TaskEncoder
+from .encoder import TaskEncoder, MMAMLEncoder
 from .datasets import TIMLCropHarvestLabels, TIMLCropHarvest, TIMLTask
 
 from cropharvest import countries
@@ -117,8 +117,11 @@ class Learner:
         encoder_dropout: float = 0.2,
         concatenate_task_info: bool = False,
         num_encoder_channels_per_group: Union[int, List[int]] = 16,
+        mmaml: bool = False,
+        task_awareness: bool = True
     ) -> None:
 
+        assert not (mmaml and task_awareness), "Can't have both MMAML and TIML"
         # update val size needs to be divided by 2 since
         # k is multiplied by 2 (k = number of positive / negative vals)
         min_total_k = k + (update_val_size // 2)
@@ -135,6 +138,8 @@ class Learner:
             "encoder_vector_sizes": encoder_vector_sizes,
             "concatenate_task_info": concatenate_task_info,
             "num_encoder_channels_per_group": num_encoder_channels_per_group,
+            "mmaml": mmaml,
+            "task_awareness": task_awareness
             # "git-describe": subprocess.check_output(["git", "describe", "--always"])
             # .strip()
             # .decode("utf-8"),
@@ -175,8 +180,9 @@ class Learner:
 
         self.encoder: Optional[nn.Module] = None
         self.concatenate_task_info = concatenate_task_info
-        self.add_awareness = not concatenate_task_info
-        if self.add_awareness:
+        self.task_awareness = task_awareness
+        self.mmaml = mmaml
+        if self.task_awareness:
             if isinstance(encoder_vector_sizes, int):
                 encoder_vector_sizes = [encoder_vector_sizes]
             self.encoder = TaskEncoder(
@@ -188,6 +194,14 @@ class Learner:
                 encoder_dropout=encoder_dropout,
                 num_timesteps=self.train_dl.num_timesteps,
                 num_channels_per_group=num_encoder_channels_per_group,
+            )
+        elif self.mmaml:
+            self.encoder = MMAMLEncoder(
+                num_bands=input_size,
+                num_hidden_layers=num_classification_layers,
+                hidden_vector_size=classifier_vector_size,
+                encoder_dropout=encoder_dropout,
+                num_timesteps=self.train_dl.num_timesteps,
             )
 
         self.loss = nn.BCELoss(reduction="mean")
@@ -324,7 +338,7 @@ class Learner:
 
         encoder_opt: Optional[torch.optim.Optimizer] = None
         encoder_scheduler = None
-        if self.add_awareness:
+        if ((self.task_awareness) or (self.mmaml)):
             assert self.encoder is not None
             encoder_opt = optim.Adam(self.encoder.parameters(), encoder_lr)
             if schedule:
@@ -372,9 +386,13 @@ class Learner:
                     task_label, k=final_k, task_noise_scale=task_noise_scale
                 )
 
-                if self.add_awareness:
+                if self.task_awareness:
                     assert self.encoder is not None
                     task_encodings = self.encoder(task_info)
+                    learner.module.update_embeddings(task_encodings)
+                elif self.mmaml:
+                    assert self.encoder is not None
+                    task_encodings = self.encoder(*batch)
                     learner.module.update_embeddings(task_encodings)
 
                 _, _, evaluation_error, train_auc = self.fast_adapt(
@@ -438,8 +456,11 @@ class Learner:
                 val_task_info, val_batch = self.val_dl.sample_task(val_label, k=final_k)
 
                 with torch.no_grad():
-                    if self.encoder is not None:
+                    if self.task_awareness:
                         task_encodings = self.encoder(val_task_info)
+                        learner.module.update_embeddings(task_encodings)
+                    elif self.mmaml:
+                        task_encodings = self.encoder(*val_batch)
                         learner.module.update_embeddings(task_encodings)
 
                 _, _, val_error, val_auc = self.fast_adapt(
@@ -541,7 +562,7 @@ class Learner:
         )
 
         # save the encoder seperately, to make it easier to investigate
-        if self.add_awareness:
+        if ((self.task_awareness) or (self.mmaml)):
             assert self.encoder is not None
             encoder_files = list(self.version_folder.glob("encoder_state_dict*"))
             if len(encoder_files) > 0:
