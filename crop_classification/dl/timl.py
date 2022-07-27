@@ -768,6 +768,8 @@ def _check_normalizing_dict(normalizing_dict: Optional[Dict]) -> Dict:
 
 def load_timl_model(
     task_info: np.ndarray,
+    train_x: np.ndarray,
+    train_y: np.ndarray,
     input_size: int,
     num_timesteps: int,
     model_state_dict_path: Path,
@@ -789,19 +791,37 @@ def load_timl_model(
     model.normalizing_dict = _check_normalizing_dict(normalizing_dict)
 
     if encoder_state_dict_path.exists():
-        encoder = TaskEncoder(
-            input_size=task_info.shape[0],
-            encoder_vector_sizes=ENCODER_VECTOR_SIZES,
-            encoder_dropout=ENCODER_DROPOUT,
-            num_bands=input_size,
-            num_hidden_layers=NUM_CLASSIFICATION_LAYERS,
-            hidden_vector_size=HIDDEN_VECTOR_SIZE,
-            num_timesteps=num_timesteps,
-        )
-        encoder.load_state_dict(torch.load(encoder_state_dict_path))
-        encoder.eval()
-        with torch.no_grad():
-            task_embeddings = encoder(torch.from_numpy(task_info).float())
-            model.update_embeddings(task_embeddings)
+        try:
+            encoder = TaskEncoder(
+                input_size=task_info.shape[0],
+                encoder_vector_sizes=ENCODER_VECTOR_SIZES,
+                encoder_dropout=ENCODER_DROPOUT,
+                num_bands=input_size,
+                num_hidden_layers=NUM_CLASSIFICATION_LAYERS,
+                hidden_vector_size=HIDDEN_VECTOR_SIZE,
+                num_timesteps=num_timesteps,
+            )
+            encoder.load_state_dict(torch.load(encoder_state_dict_path))
+            encoder.eval()
+            with torch.no_grad():
+                task_embeddings = encoder(torch.from_numpy(task_info).float())
+                model.update_embeddings(task_embeddings)
+
+        except RuntimeError:
+            encoder = MMAMLEncoder(
+                num_bands=input_size,
+                num_hidden_layers=NUM_CLASSIFICATION_LAYERS,
+                encoder_hidden_vector_size=HIDDEN_VECTOR_SIZE,
+                classifier_hidden_vector_size=HIDDEN_VECTOR_SIZE,
+                encoder_dropout=ENCODER_DROPOUT,
+                num_timesteps=num_timesteps,
+            )
+            encoder.load_state_dict(torch.load(encoder_state_dict_path))
+            encoder.eval()
+            with torch.no_grad():
+                task_embeddings = encoder(
+                    torch.from_numpy(train_x).float(), torch.from_numpy(train_y).float()
+                )
+                model.update_embeddings(task_embeddings)
 
     return model

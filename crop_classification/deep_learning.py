@@ -58,8 +58,12 @@ def evaluate_model(
                     data_folder / DL_TIML / "encoder_state_dict.pth"
                 ).exists()
 
+                x, y = dataset.as_array(num_samples=10)
+
                 model = load_timl_model(
                     task_info=task_info,
+                    train_x=x,
+                    train_y=y,
                     input_size=dataset.num_bands
                     if uses_encoder
                     else dataset.num_bands + task_info.shape[0],

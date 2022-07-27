@@ -114,7 +114,7 @@ class MMAMLEncoder(nn.Module):
 
         # the lstm here isn't for the timesteps; its for the examples!
         self.initial_encoder = UnrolledLSTM(
-            # we add the target to the
+            # we add the target to each timestep
             input_size=((num_bands + 1) * num_timesteps),
             hidden_size=encoder_hidden_vector_size,
             dropout=encoder_dropout,
