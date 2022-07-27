@@ -678,6 +678,7 @@ def train_timl_model(
     task_noise_scale: float = 0.1,
     task_awareness: bool = True,
     mmaml: bool = False,
+    task_removal_threshold: Optional[float] = 0.95
 ) -> Classifier:
     r"""
     Initialize a classifier and pretrain it using model-agnostic meta-learning (MAML)
@@ -748,6 +749,7 @@ def train_timl_model(
         checkpoint_every=checkpoint_every,
         schedule=schedule,
         task_noise_scale=task_noise_scale,
+        task_removal_threshold=task_removal_threshold
     )
 
     return model.model
