@@ -168,9 +168,7 @@ class MMAMLEncoder(nn.Module):
 
         # github.com/vuoristo/MMAML-Regression/blob/master/maml/models/lstm_embedding_model.py#L36
         x = torch.cat([x, torch.stack([y.expand(1, -1).T] * x.shape[1], dim=1)], dim=-1)
-        for _, lstm in enumerate(self.base):
-            x, (hn, _) = lstm(x)
-            x = x[:, 0, :, :]
+        _, (hn, _) = self.initial_encoder(x)
         x = hn[-1, :, :]
 
         gamma_outputs: List[torch.Tensor] = []
