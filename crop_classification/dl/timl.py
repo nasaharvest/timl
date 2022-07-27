@@ -199,7 +199,8 @@ class Learner:
             self.encoder = MMAMLEncoder(
                 num_bands=input_size,
                 num_hidden_layers=num_classification_layers,
-                hidden_vector_size=classifier_vector_size,
+                encoder_hidden_vector_size=classifier_vector_size,
+                classifier_hidden_vector_size=classifier_vector_size,
                 encoder_dropout=encoder_dropout,
                 num_timesteps=self.train_dl.num_timesteps,
             )
@@ -655,7 +656,7 @@ class Learner:
 def train_timl_model(
     root,
     model_name: str,
-    encoder_vector_sizes: Union[List[int], int],
+    encoder_vector_sizes: Union[List[int], int] = ENCODER_VECTOR_SIZES,
     classifier_vector_size: int = HIDDEN_VECTOR_SIZE,
     classifier_dropout: float = CLASSIFIER_DROPOUT,
     classifier_base_layers: int = CLASSIFIER_BASE_LAYERS,
