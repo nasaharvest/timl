@@ -81,6 +81,8 @@ class Classifier(nn.Module):
         )
         if self.embeddings is not None:
             for embedding in self.embeddings:
+                del embedding[0]
+                del embedding[1]
                 del embedding
             del self.embeddings
         self.embeddings = embeddings
