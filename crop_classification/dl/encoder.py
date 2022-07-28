@@ -168,8 +168,9 @@ class MMAMLEncoder(nn.Module):
     ) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
 
         # github.com/vuoristo/MMAML-Regression/blob/master/maml/models/lstm_embedding_model.py#L36
-        x = torch.cat([x, torch.stack([y.expand(1, -1).T] * x.shape[1], dim=1)], dim=-1)
-        x = torch.unsqueeze(x.reshape(x.shape[0], -1), 0)
+        with torch.no_grad():
+            x = torch.cat((x, torch.stack([y.expand(1, -1).T] * x.shape[1], dim=1)), dim=-1)
+            x = torch.unsqueeze(x.reshape(x.shape[0], -1), 0)
 
         x = self.initial_encoder(x)[1][0]
         x = x[-1, :, :]
