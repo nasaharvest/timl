@@ -79,6 +79,10 @@ class Classifier(nn.Module):
             f"Got {len(embeddings[0])} embeddings for "
             f"{len(self.global_classifier)} classification blocks"
         )
+        if self.embeddings is not None:
+            for embedding in self.embeddings:
+                del embedding
+            del self.embeddings
         self.embeddings = embeddings
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

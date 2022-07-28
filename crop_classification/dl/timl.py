@@ -585,7 +585,7 @@ class Learner:
     def _make_tasks(
         self, min_task_k: int, val_size: float
     ) -> Tuple[Dict[str, TIMLCropHarvest], Dict[str, TIMLCropHarvest]]:
-        labels = TIMLCropHarvestLabels(self.root)
+        labels = TIMLCropHarvestLabels(self.root, download=True)
 
         # remove any test regions, and collect the countries / crops
         test_countries_to_crops: DefaultDict[str, List[str]] = defaultdict(list)
@@ -614,6 +614,7 @@ class Learner:
                         TIMLTask(
                             bounding_box=country_bbox, target_label=None, normalize=True
                         ),
+                        download=True
                     )
                 except NoDataForBoundingBoxError:
                     continue
@@ -637,6 +638,7 @@ class Learner:
                                 normalize=True,
                                 classification_label=classification_label,
                             ),
+                            download=True
                         )
                     except NoDataForBoundingBoxError:
                         continue

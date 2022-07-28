@@ -171,8 +171,8 @@ class MMAMLEncoder(nn.Module):
         x = torch.cat([x, torch.stack([y.expand(1, -1).T] * x.shape[1], dim=1)], dim=-1)
         x = torch.unsqueeze(x.reshape(x.shape[0], -1), 0)
 
-        _, (hn, _) = self.initial_encoder(x)
-        x = hn[-1, :, :]
+        x = self.initial_encoder(x)[1][0]
+        x = x[-1, :, :]
         gamma_outputs: List[torch.Tensor] = []
         beta_outputs: List[torch.Tensor] = []
         for layer_name in self.gamma_layer_names:
