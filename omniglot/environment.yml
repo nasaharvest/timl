@@ -1,0 +1,17 @@
+name: timl-yield
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.6
+  - black
+  - pip
+  - pytorch=1.6.0
+  - tqdm
+  - scikit-learn
+  - platformdirs=2.3.0
+  - pillow
+  - pip:
+      - learn2learn==0.1.3
+      - dill
+      - openpyxl
