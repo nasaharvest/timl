@@ -1,6 +1,6 @@
 # Grouped Omniglot
 
-Task-Informed Meta-Learning applied to the [Omniglot dataset](https://github.com/brendenlake/omniglot). This dataset must be downloaded into the [data folder](data).
+Task-Informed Meta-Learning applied to the [Omniglot dataset](https://github.com/brendenlake/omniglot). This dataset must be downloaded into the [omniglot folder](omniglot).
 
 ### Getting started
 
