@@ -43,6 +43,24 @@ jobs:
         python -m black --check --diff .
         python -m pytest -m "not integration"
         cd ..
+  test-omniglot:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+    - uses: actions/checkout@v2
+    - name: install mamba
+      uses: mamba-org/provision-with-micromamba@main
+      with:
+        environment-file: omniglot/environment.yml
+        environment-name: timl-omniglot
+    - name: Run tests
+      run: |
+        cd omniglot
+        python -m black --check --diff .
+        python -m unittest discover -s tests
+        cd ..
 
   deploy-crop-classification:
     runs-on: ubuntu-latest

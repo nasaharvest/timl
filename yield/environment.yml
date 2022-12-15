@@ -6,7 +6,6 @@ dependencies:
   - python=3.6  # earthengine doesn't play with python 3.7
   - black
   - pytest
-  - pytest-flake8
   - pip
   - pytorch=1.6.0
   - tqdm
