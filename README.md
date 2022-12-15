@@ -6,6 +6,7 @@ We consider two tasks:
 
 - [Crop Type Classification](crop_classification)
 - [Yield Estimation](yield)
+- [Grouped Omniglot](omniglot)
 
 Each task acts as its own self-contained codebase - for more details on running the experiments, please check their respective READMEs.
 
